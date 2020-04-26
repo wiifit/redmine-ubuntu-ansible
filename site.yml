@@ -1,13 +1,25 @@
-- hosts: redmine-servers
+- hosts: redmineservers
+  gather_facts: true
+  pre_tasks:
+    - name: Install python
+      become: yes
+      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3-minimal)
+      changed_when: false
 
   roles:
     - system
     - pg
     - ruby
     - redmine
-    - apache
+    - nginx
+  
+  handlers:
+
+    - name: restart nginx
+      become: yes
+      service: name=nginx state=restarted
 
   post_tasks:
-    - name: 完了
+    - name: Done
       debug:
-        msg='インストールが完了しました。 http://{{ ansible_default_ipv4.address }}/redmine/  にアクセスしてください。'
+        msg='Installation is complete. Go to https://{{ ansible_default_ipv4.address }}'

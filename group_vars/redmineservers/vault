@@ -1,0 +1,10 @@
+# Database redmine user's password (change recommended)
+vault_db_passwd_redmine: db_pass
+# Letsencrypt
+vault_letsencrypt_email: mail@your.domain
+# Redmine
+vault_redmine_domain: your.domain
+# Ssmtp
+vault_ssmtp_user: your.user@your.domain 
+vault_ssmtp_auth_password: ssmtp_auth_password
+vault_ssmtp_hostname: your.domain

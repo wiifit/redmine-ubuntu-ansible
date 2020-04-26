@@ -1,10 +1,10 @@
-- name: Redmineのソースコードをチェックアウト
+- name: Check out the Redmine source code
   become: yes
   subversion:
     repo={{ redmine_svn_url }}
     dest={{ redmine_dir }}
 
-- name: database.ymlの作成
+- name: Create database.yml
   become: yes
   template:
     src=database.yml
@@ -13,14 +13,14 @@
   register:
     result_database_yml
 
-- name: configuration.ymlの作成
+- name: Create configuration.yml
   become: yes
   template:
     src=configuration.yml
     dest={{ redmine_dir }}/config/configuration.yml
-    force=no
+    force=yes
 
-- name: Gemfile.lockが存在するか確認
+- name: Check if Gemfile.lock exists
   command:
     test -f {{ redmine_dir }}/Gemfile.lock
   register:
@@ -28,17 +28,17 @@
   failed_when: result_test_gemfile.rc not in [0, 1]
   changed_when: false
 
-- name: gemsパッケージのインストール
+- name: Installing the gems package
   become: yes
   command:
-    bundle install --path vendor/bundle
+    bundle install --path vendor/bundle --without development test
     chdir={{ redmine_dir }}
   environment:
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
   when:
     result_test_gemfile.rc == 1
 
-- name: gemsパッケージのアップデート
+- name: Gems package update
   become: yes
   command:
     bundle update
@@ -48,7 +48,7 @@
   when:
     result_test_gemfile.rc == 0
 
-- name: secret tokenの作成
+- name: Create secret token
   become: yes
   command:
     bundle exec rake generate_secret_token
@@ -57,7 +57,7 @@
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
 
-- name: データベースのマイグレーション
+- name: Database migration
   become: yes
   command:
     bundle exec rake db:migrate
@@ -66,7 +66,16 @@
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
 
-- name: デフォルトデータ(日本語)をロード
+- name: Clear cache
+  become: yes
+  command:
+    bundle exec rake tmp:cache:clear tmp:sockets:clear
+    chdir={{ redmine_dir }}
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    RAILS_ENV: production
+
+- name:  Load default data
   become: yes
   command:
     bundle exec rake redmine:load_default_data
@@ -74,39 +83,22 @@
   environment:
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
-    REDMINE_LANG: ja
+    REDMINE_LANG: "{{ redmine_lang }}"
   when:
-    result_database_yml|changed
+    result_database_yml is changed
 
-- name: farend_basicテーマのダウンロード
-  become: yes
-  git:
-    repo=https://github.com/farend/redmine_theme_farend_basic.git
-    dest={{ redmine_dir }}/public/themes/farend_basic
-
-- name: テーマをfarend_basicに切り替え
+- name: Change default language
   become: yes
   command:
-    bundle exec rails r 'Setting["ui_theme"]="farend_basic"'
+    bundle exec rails r 'Setting["default_language"]="{{ redmine_lang }}"'
     chdir={{ redmine_dir }}
   environment:
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
-    result_database_yml|changed
+    result_database_yml is changed
 
-- name: デフォルトの言語を日本語に変更
-  become: yes
-  command:
-    bundle exec rails r 'Setting["default_language"]="ja"'
-    chdir={{ redmine_dir }}
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-    RAILS_ENV: production
-  when:
-    result_database_yml|changed
-
-- name: ユーザー名の表示形式を「姓 名」に変更
+- name: Change display format of user name to "Surname name"
   become: yes
   command:
     bundle exec rails r 'Setting["user_format"]=:lastname_firstname'
@@ -115,20 +107,20 @@
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
-    result_database_yml|changed
+    result_database_yml is changed
 
-- name: 添付ファイルとリポジトリのエンコーディングを設定
+- name: Set attachment and repository encoding
   become: yes
   command:
-    bundle exec rails r 'Setting["repositories_encodings"]="UTF-8,CP932,EUC-JP"'
+    bundle exec rails r 'Setting["repositories_encodings"]="{{ redmine_repositories_encodings }}"'
     chdir={{ redmine_dir }}
   environment:
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
-    result_database_yml|changed
+    result_database_yml is changed
 
-- name: 添付ファイルのサムネイルを表示
+- name: Display thumbnail of attached file
   become: yes
   command:
     bundle exec rails r 'Setting["thumbnails_enabled"]="1"'
@@ -137,4 +129,4 @@
     PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
-    result_database_yml|changed
+    result_database_yml is changed

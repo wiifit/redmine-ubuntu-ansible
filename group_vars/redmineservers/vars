@@ -1,0 +1,44 @@
+# ----------------------------------------------------------------------
+# Database name, user and password
+db_name_redmine: redmine
+db_user_redmine: redmine
+db_passwd_redmine: "{{ vault_db_passwd_redmine }}"
+
+# Letsencrypt
+letsencrypt_email: "{{ vault_letsencrypt_email }}"
+enable_letsencrypt: false
+
+# ----------------------------------------------------------------------
+# Redmine checkout source URL
+redmine_svn_url: http://svn.redmine.org/redmine/branches/4.1-stable
+
+# Redmine's deployment directory
+redmine_dir: /var/lib/redmine
+
+# Redmine's deployment directory owner: group
+redmine_dir_owner: www-data
+redmine_dir_group: www-data
+
+# Ssmtp
+ssmtp_mailhub: "smtp.google.com"
+ssmtp_mailport: "465"
+ssmtp_user: "{{ vault_ssmtp_user }}"
+ssmtp_auth_password: "{{ vault_ssmtp_auth_password }}"
+ssmtp_hostname: "{{ vault_ssmtp_hostname }}"
+
+# Localization parameters
+redmine_lang: ru
+redmine_repositories_encodings: UTF-8,CP1251
+db_locale: ru_RU.UTF-8
+
+# Redmine
+redmine_domain: "{{ vault_redmine_domain }}"
+
+# Download Ruby source code
+ruby_url_dir: https://cache.ruby-lang.org/pub/ruby/2.6
+ruby_archive_version: ruby-2.6.6
+ruby_archive_ext: tar.bz2
+ruby_archive_name: "{{ ruby_archive_version }}.{{ ruby_archive_ext }}"
+
+ruby_file_name: /usr/local/bin/ruby
+work_dir: /tmp/redmine-setup

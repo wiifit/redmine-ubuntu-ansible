@@ -1,66 +1,78 @@
-# redmine-ubuntu-ansible
+# Redmine-ubuntu-ansible
 
+Ansible playbook for automatically installing Redmine on Ubuntu Server installed with minimum configuration. [Original playbook] (https://github.com/farend/redmine-ubuntu-ansible.git) was modified for Ubuntu 18.04 support and for latest Redmine version. Apache web server was replaced by Nginx.
 
-最小構成でインストールしたUbuntu ServerにRedmineを自動インストールするためのAnsibleプレイブックです。
+Just run 6 commands and leave it for a while and the installation will be completed.
 
-コマンド6個実行するだけで、あとはしばらく放置すればインストールが完了します。
+## System configuration
 
-
-## 概要
-
-Ansibleを使ってRedmineを自動インストールするためのプレイブックです。以下のwebサイトで紹介されている手順におおむね準拠しています。
-
-[Redmine 3.4をUbuntu Server 16.04.2 LTSにインストールする手順](http://blog.redmine.jp/articles/3_4/install/ubuntu/)
-
-
-## システム構成
-
-* Redmine 3.4
-* Ubuntu Server 16.04.2 LTS
+* Redmine 4.1
+* Ubuntu Server 18.04 LTS
 * PostgreSQL
-* Apache
+* Nginx
 
 
-## Redmineのインストール手順
+## Installation procedure of Redmine
 
-インストール直後の Ubuntu 16.04 にログインし以下の操作を行ってください。
+Log in to Ubuntu 18.04 immediately after installation and perform the following operation.
 
-
-### Ansibleとgitのインストール
-
-```
-sudo apt-get update
-sudo apt-get install -y python-pip libpython-dev git libssl-dev
-sudo pip install ansible
-```
-
-### playbookのダウンロード
+### Installing Ansible and git
 
 ```
-git clone https://github.com/farend/redmine-ubuntu-ansible.git
+Sudo apt-get update
+Sudo apt-get install -y python-pip libpython-dev git libssl-dev
+Sudo pip install ansible
 ```
 
-### PostgreSQLに設定するパスワードの変更 (推奨)
-
-ファイル `group_vars/redmine-servers` をエディタで開き、 `db_passwd_redmine` を適当な内容に変更してください。これはPostgreSQLのRedmine用ユーザー redmine に設定されるパスワードです。
-
-### playbook実行
-
-下記コマンドを実行してください。Redmineの自動インストールが開始されます。
+### Download playbook
 
 ```
-cd redmine-ubuntu-ansible
-ansible-playbook -K -i hosts site.yml
+Git clone https://github.com/wiifit/redmine-ubuntu-ansible.git
 ```
 
-10〜20分ほどでインストールが完了します。webブラウザで `http://サーバIPアドレス/redmine` にアクセスしてください。Redmineの画面が表示されるはずです。
+### Change the password set for PostgreSQL (Recommended)
+
+Open the file `group_vars/redmineservers/vault` in an editor and change` vault_db_passwd_redmine` to the appropriate contents. This is the password set for user redmine for Redmine of PostgreSQL. You can find other sensitive parameters in this `vault` file. You can encrypt it with this command
+
+```
+ansible-vault encrypt --ask-vault-pass ./group_vars/redmineservers/vault
+```
+
+### Define SSMTP parameters for Redmine email notifications, localization parameters
+
+Open the file `group_vars/redmineservers/vars` and modify `ssmtp_mailhub` and `ssmtp_mailport` parameters. You can find other non-sensitive parameters in this `vars` file.
+
+### Localization parameters
+You can change locale of your redmine instance by modifiying `group_vars/redmineservers/vars` file
+
+```
+redmine_lang: en
+redmine_repositories_encodings: UTF-8,CP1251
+db_locale: en_US.UTF-8
+```
+
+### Letsencrypt support
+
+This playbook has letsencrypt support, which is disabled by default. To get letsencrypt certificate you should open the file `group_vars/redmineservers/vars` and set parameter `enable_letsencrypt` to `true`. You should also fill your email in `vault_letsencrypt_email` parameter, which is located in `vault` file.
 
 
-## ライセンス
+### Playbook execution
+
+Execute the following command. Automatic installation of Redmine will start.
+
+```
+сd redmine-ubuntu-ansible
+ansible-playbook -K --ask-vault-pass -i hosts site.yml
+```
+
+Installation will be completed in 10 to 20 minutes. Please access `http: // server IP address / redmine` in the web browser. The screen of Redmine should be displayed.
+
+
+## license
 
 MIT License
 
 
-## 作者
+## original author
 
-[ファーエンドテクノロジー株式会社](http://www.farend.co.jp/)
+[Far End Technology Co., Ltd.] (http://www.farend.co.jp/)

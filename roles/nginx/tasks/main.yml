@@ -1,0 +1,175 @@
+- name: Change owner under Redmine directory
+  become: yes
+  file:
+    path: "{{ redmine_dir }}"
+    owner: "{{ redmine_dir_owner }}"
+    group: "{{ redmine_dir_group }}"
+    recurse: yes
+
+- name: Check if Passenger Nginx is installed
+  command:
+    test -f /usr/local/bin/passenger-install-nginx-module
+  register:
+    result
+  failed_when: result.rc not in [0, 1]
+  changed_when: false
+
+- name: Add Passenger key
+  become: yes
+  apt_key:
+    keyserver: hkp://keyserver.ubuntu.com:80
+    keyring: "/etc/apt/trusted.gpg.d/passenger.gpg"
+    id: "561F9B9CAC40B2F7"
+    state: present
+  when: result.rc == 1
+    
+- name: Install HTTPS support for APT
+  become: yes
+  apt:
+    pkg:
+    - apt-transport-https
+    - ca-certificates
+  when: result.rc == 1
+
+- name: Add source repository into sources list
+  become: yes
+  command: sh -c 'echo deb https://oss-binaries.phusionpassenger.com/apt/passenger $(lsb_release -cs) main > /etc/apt/sources.list.d/passenger.list'
+  args:
+    creates: /etc/apt/sources.list.d/passenger.list
+  when: result.rc == 1
+
+- name: apt-get update
+  become: yes
+  apt:
+    update_cache=yes
+  when: result.rc == 1
+
+- name: Install Passenger + Nginx
+  become: yes
+  apt:
+    pkg: 
+    - nginx-extras
+    - libnginx-mod-http-passenger
+  when: result.rc == 1
+
+- name: Check if Letsencrypt key is already obtained
+  command:
+    test -L /etc/letsencrypt/live/{{ redmine_domain }}/cert.pem
+  register:
+    letsencrypt_result
+  when: enable_letsencrypt
+  failed_when: letsencrypt_result.rc not in [0, 1]
+  changed_when: false
+
+- name:  Install Software-properties-common package
+  become: yes
+  apt: 
+    name: software-properties-common
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+
+- name: Add Universe repository
+  become: yes
+  apt_repository: 
+    repo: universe
+    state: present
+    update_cache: yes
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+
+- name: Add Certbot repository
+  become: yes
+  apt_repository: 
+    repo: ppa:certbot/certbot
+    state: present
+    update_cache: yes
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+
+- name: Install Letsencrypt Certbot package
+  apt:
+    name: 'certbot,python-certbot-nginx'
+    state: present
+    update_cache: yes
+  become: yes
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+
+- name: Create new ssl certificate with letsencrypt
+  shell: certbot certonly --agree-tos -m {{ letsencrypt_email }} --keep-until-expiring -n --standalone -d {{ redmine_domain }}
+  become: yes
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+
+- name: Create directory for certificate
+  become: yes
+  file: 
+    path: /etc/letsencrypt/live/{{ redmine_domain }} 
+    state: directory
+    mode: 0755
+
+- name: Create self-signed ssl certificate
+  shell: openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/letsencrypt/live/{{ redmine_domain }}/privkey.pem -out /etc/letsencrypt/live/{{ redmine_domain }}/fullchain.pem -subj "/C=US/ST=New York/L=Brooklyn/O=Example Brooklyn Company/CN={{ redmine_domain }}"
+  become: yes
+  when: not enable_letsencrypt
+
+- name: Copy new nginx conf from template
+  become: yes
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+  template:
+    src: redmine-letsencrypt.conf
+    dest: /etc/nginx/sites-available/redmine.conf
+  notify:
+    - restart nginx
+
+- name: Copy new nginx conf from template for self-signed ssl certificate
+  become: yes
+  when: not enable_letsencrypt
+  template:
+    src: redmine-ssc.conf
+    dest: /etc/nginx/sites-available/redmine.conf
+  notify:
+    - restart nginx
+
+- name: Create link of nginx conf
+  become: yes
+  file:
+    src: /etc/nginx/sites-available/redmine.conf
+    dest: /etc/nginx/sites-enabled/redmine.conf 
+    state: link
+  notify:
+    - restart nginx
+
+# - name: Enable Passenger in nginx.conf
+#   become: yes
+#   replace:
+#     backup: yes
+#     path: /etc/nginx/nginx.conf
+#     regexp: '\#(\s+)include /etc/nginx/passenger\.conf' 
+#     replace: '\1include /etc/nginx/passenger.conf'
+#   notify:
+#     - restart nginx
+
+- name: Change path to ruby in passenger.conf
+  become: yes
+  replace:
+    path: /etc/nginx/conf.d/mod-http-passenger.conf
+    regexp: '^passenger_ruby (.*)\n' 
+    replace: 'passenger_ruby /usr/local/bin/ruby;\n' 
+  notify:
+    - restart nginx
+
+- name: Copy letsencrypt renewal script (cert-renew.sh) from template
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+  template:
+    src: cert-renew.sh
+    dest: /root/cert-renew.sh
+    owner: "root"
+    group: "root"
+    mode: 0755
+
+- name: Create cron task for letsencrypt cert renew
+  when: enable_letsencrypt and letsencrypt_result.rc == 1
+  become: yes
+  cron:
+    name: "Renew letsencrypt cert"
+    user: "root"
+    minute: "30"
+    hour: "4"
+    weekday: "1"
+    job: "/root/cert-renew.sh"

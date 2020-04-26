@@ -1,8 +1,7 @@
-# PostgreSQLでlc_collateとlc_ctypeに ja_JP.UTF-8 を指定するために必要
-- name: ja_JP.UTF-8ロケール作成
+- name: Locale creation
   become: yes
   command:
-    locale-gen ja_JP.UTF-8
+    locale-gen {{ db_locale }}
 
 - name: apt-get update
   become: yes
@@ -10,30 +9,30 @@
     update_cache=yes
     cache_valid_time=86400
 
-- name: RubyとPassengerのビルドに必要な開発ツールやヘッダファイルのインストール
+- name: Install python3-psycopg2 for Python3 as we change ansible_python_interpreter=/usr/bin/python3
   become: yes
   apt:
-    name='build-essential,zlib1g-dev,libssl-dev,libreadline-dev,libyaml-dev,libcurl4-openssl-dev,libffi-dev'
+    name: python3-psycopg2
 
-- name:  PostgreSQLとヘッダファイルのインストール
+- name: Install development tools and header files necessary for building Ruby and Passenger
   become: yes
   apt:
-    name='postgresql,postgresql-server-dev-9.5,python-psycopg2'
+    name='build-essential,zlib1g-dev,libssl-dev,libreadline-dev,libyaml-dev,libcurl4-openssl-dev'
 
-- name:  Apacheとヘッダファイルのインストール
+- name:  Install zip
   become: yes
   apt:
-    name='apache2,apache2-dev,libapr1-dev,libaprutil1-dev'
+    name='zip,unzip'
 
-- name:  ImageMagickとヘッダファイル・日本語フォントのインストール
+- name:  Install ImageMagick and header files & specific fonts
   become: yes
   apt:
-    name='imagemagick,libmagick++-dev,fonts-takao-pgothic'
+    name='imagemagick,libmagick++-dev'
 
-- name:  そのほかのツールのインストール
+- name:  Install other tools
   become: yes
   apt:
     name='subversion,git'
 
-- name: 作業ディレクトリ作成
+- name: Create working directory
   file: path={{ work_dir }} state=directory mode=0755

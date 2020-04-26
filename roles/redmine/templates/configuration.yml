@@ -1,9 +1,12 @@
 production:
   email_delivery:
     delivery_method: :smtp
-    smtp_settings:
-      address: "localhost"
-      port: 25
-      domain: "{{ ansible_fqdn }}"
-
-  rmagick_font_path: {{ redmine_font_path }}
+  smtp_settings:
+    enable_starttls_auto: true
+    ssl: true
+    address: "{{ ssmtp_mailhub }}"
+    port: "{{ ssmtp_mailport | int }}"
+    domain: "{{ ssmtp_hostname}}"
+    authentication: :login
+    user_name: "{{ ssmtp_user }}" 
+    password: "{{ ssmtp_auth_password }}"
