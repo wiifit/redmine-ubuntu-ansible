@@ -38,7 +38,7 @@ Open the file `group_vars/redmineservers/vault` in an editor and change` vault_d
 ansible-vault encrypt --ask-vault-pass ./group_vars/redmineservers/vault
 ```
 
-### Define SSMTP parameters for Redmine email notifications, localization parameters
+### Define SSMTP parameters for Redmine email notifications
 
 Open the file `group_vars/redmineservers/vars` and modify `ssmtp_mailhub` and `ssmtp_mailport` parameters. You can find other non-sensitive parameters in this `vars` file.
 
