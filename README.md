@@ -19,15 +19,15 @@ Log in to Ubuntu 18.04 immediately after installation and perform the following 
 ### Installing Ansible and git
 
 ```
-Sudo apt-get update
-Sudo apt-get install -y python-pip libpython-dev git libssl-dev
-Sudo pip install ansible
+sudo apt-get update
+sudo apt-get install -y python-pip libpython-dev git libssl-dev
+sudo pip install ansible
 ```
 
 ### Download playbook
 
 ```
-Git clone https://github.com/wiifit/redmine-ubuntu-ansible.git
+git clone https://github.com/wiifit/redmine-ubuntu-ansible.git
 ```
 
 ### Change the password set for PostgreSQL (Recommended)
