@@ -1,6 +1,6 @@
 # Redmine-ubuntu-ansible
 
-Ansible playbook for automatically installing Redmine on Ubuntu Server installed with minimum configuration. [Original playbook] (https://github.com/farend/redmine-ubuntu-ansible.git) was modified for Ubuntu 18.04 support and for latest Redmine version. Apache web server was replaced by Nginx.
+Ansible playbook for automatically installing Redmine on Ubuntu Server installed with minimum configuration. [Original playbook](https://github.com/farend/redmine-ubuntu-ansible) was modified for Ubuntu 18.04 support and for latest Redmine version. Apache web server was replaced by Nginx.
 
 Just run 6 commands and leave it for a while and the installation will be completed.
 
@@ -38,7 +38,7 @@ Open the file `group_vars/redmineservers/vault` in an editor and change` vault_d
 ansible-vault encrypt --ask-vault-pass ./group_vars/redmineservers/vault
 ```
 
-### Define SSMTP parameters for Redmine email notifications, localization parameters
+### Define SSMTP parameters for Redmine email notifications
 
 Open the file `group_vars/redmineservers/vars` and modify `ssmtp_mailhub` and `ssmtp_mailport` parameters. You can find other non-sensitive parameters in this `vars` file.
 
@@ -75,4 +75,4 @@ MIT License
 
 ## original author
 
-[Far End Technology Co., Ltd.] (http://www.farend.co.jp/)
+[Far End Technology Co., Ltd.](http://www.farend.co.jp/)
